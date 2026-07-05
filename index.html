@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Passaronativo — MVP</title>
-  <meta name="description" content="Passaronativo — MVP offline: notas, busca local e upload/preview de foto. Pronto para GitHub Pages." />
+  <meta name="description" content="Passaronativo — MVP offline: notas, busca local, base de conhecimento local e upload/preview de foto. Pronto para GitHub Pages." />
   <style>
     :root{
       --bg:#0b0f13; --panel:#0f1418; --muted:#9aa6b2; --accent:#7bd389; --danger:#ff6b6b; --glass:rgba(255,255,255,0.03);
@@ -17,6 +17,10 @@
     .logo{width:44px;height:44px;border-radius:10px;background:linear-gradient(135deg,#072226 0%,#063a2e 100%);display:flex;align-items:center;justify-content:center;color:var(--accent);font-weight:700}
     h1{font-size:1.1rem;margin:0}
     p.lead{margin:0;color:var(--muted);font-size:0.9rem}
+
+    .tabs{display:flex;gap:8px;margin-top:12px}
+    .tab{padding:8px 12px;border-radius:10px;background:var(--glass);color:var(--muted);cursor:pointer;border:1px solid rgba(255,255,255,0.02)}
+    .tab.active{background:linear-gradient(90deg,var(--accent),#5ed39d);color:#052119;border:0}
 
     .controls{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
     .searchbox{flex:1;min-width:160px;display:flex;align-items:center;background:var(--panel);padding:8px;border-radius:10px}
@@ -31,7 +35,7 @@
     .small{font-size:0.85rem;color:var(--muted)}
 
     label{display:block;margin-bottom:6px;font-size:0.9rem}
-    input[type=text], textarea{width:100%;padding:10px;border-radius:8px;border:0;background:rgba(255,255,255,0.02);color:inherit}
+    input[type=text], textarea, select{width:100%;padding:10px;border-radius:8px;border:0;background:rgba(255,255,255,0.02);color:inherit}
     textarea{min-height:90px;resize:vertical}
 
     .list{display:flex;flex-direction:column;gap:10px;margin-top:8px}
@@ -55,6 +59,10 @@
     .file-input{display:flex;gap:8px;align-items:center}
     .preview-img{max-width:100%;height:auto;border-radius:6px;border:1px solid rgba(255,255,255,0.04)}
     .row{display:flex;gap:8px;flex-wrap:wrap}
+
+    .meta small{display:block;color:var(--muted);margin-top:6px}
+    .field-row{display:flex;gap:8px}
+    .field-row .col{flex:1}
   </style>
 </head>
 <body>
@@ -63,18 +71,24 @@
       <div class="logo">P</div>
       <div>
         <h1>Passaronativo — MVP</h1>
-        <p class="lead">Notas locais, busca e upload de fotos — funciona offline (localStorage)</p>
+        <p class="lead">Notas locais, base de conhecimento, busca e upload — tudo offline no navegador</p>
       </div>
     </header>
+
+    <div class="tabs" role="tablist">
+      <button class="tab active" id="tab-notes" role="tab" aria-selected="true">Notas</button>
+      <button class="tab" id="tab-base" role="tab" aria-selected="false">Base</button>
+    </div>
 
     <div class="controls">
       <div class="searchbox" role="search">
         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="margin-right:8px"><path d="M21 21l-4.35-4.35" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path><circle cx="11" cy="11" r="6" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></circle></svg>
-        <input id="q" type="text" placeholder="Buscar notas, imagens ou tags..." aria-label="Buscar" />
+        <input id="q" type="text" placeholder="Buscar notas, base ou tags..." aria-label="Buscar" />
         <button class="btn" id="clearBtn" title="Limpar">Limpar</button>
       </div>
 
       <button class="btn" id="newNoteBtn" title="Nova nota">Nova nota</button>
+
       <label class="btn" for="fileInput" style="cursor:pointer">
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 15v4a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h11" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path><path d="M16 3h5v5" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path></svg>
         <span>Upload</span>
@@ -88,7 +102,7 @@
       <aside class="panel">
         <div id="splash" class="splash">
           <h2 style="margin:0">Bem-vindo</h2>
-          <p class="small">Crie notas, faça upload de fotos e use a busca local. Tudo salvo no seu navegador.</p>
+          <p class="small">Crie notas, adicione materiais à Base e use a busca local. Tudo salvo no seu navegador.</p>
         </div>
 
         <div id="editor" class="hidden">
@@ -103,10 +117,25 @@
             <button class="btn" id="cancelBtn">Cancelar</button>
           </div>
         </div>
+
+        <!-- Base editor (for metadata/notes about uploaded materials) -->
+        <div id="baseEditor" class="hidden">
+          <label for="baseTitle">Nome do material</label>
+          <input id="baseTitle" type="text" placeholder="Nome (preenchido automaticamente)" />
+          <label for="baseObservation">Resumo / observação do material</label>
+          <textarea id="baseObservation" placeholder="Escreva um resumo ou observação que ajude a identificar o conteúdo"></textarea>
+          <label for="baseTags">Tags (separadas por vírgula)</label>
+          <input id="baseTags" type="text" placeholder="ex: botânica, campo, artigo" />
+          <div style="display:flex;gap:8px;margin-top:8px">
+            <button class="btn primary" id="saveBaseBtn">Salvar material</button>
+            <button class="btn" id="cancelBaseBtn">Cancelar</button>
+          </div>
+        </div>
+
       </aside>
 
       <main>
-        <div class="panel">
+        <div id="notesPanel" class="panel">
           <div class="row" style="align-items:center;justify-content:space-between">
             <div class="small">Itens salvos</div>
             <div class="small muted">Offline · localStorage</div>
@@ -115,6 +144,25 @@
           <div id="list" class="list" aria-live="polite"></div>
 
           <div id="empty" class="small muted" style="margin-top:12px">Nenhuma nota ou imagem encontrada. Use "Nova nota" ou "Upload".</div>
+        </div>
+
+        <div id="basePanel" class="panel hidden">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+            <div>
+              <strong>Base de conhecimento local</strong>
+              <div class="small muted">Suba materiais (PDF/DOC/TXT/JSON/imagens). TXT/JSON são incorporados ao texto pesquisável.</div>
+            </div>
+            <div class="row">
+              <label class="btn" for="kbUpload" style="cursor:pointer">📎 Subir conhecimento</label>
+              <input id="kbUpload" type="file" accept=".pdf,.doc,.docx,.txt,application/json,image/png,image/jpeg,image/webp" multiple class="hidden" />
+              <button class="btn" id="exportKbBtn">Exportar Base (JSON)</button>
+              <label class="btn" for="importKbFile" style="cursor:pointer">Importar Base</label>
+              <input id="importKbFile" type="file" accept="application/json" class="hidden" />
+            </div>
+          </div>
+
+          <div id="kbList" class="list" style="margin-top:12px"></div>
+          <div id="kbEmpty" class="small muted" style="margin-top:12px">Nenhum material na base. Use "📎 Subir conhecimento".</div>
         </div>
 
         <footer>
@@ -140,9 +188,28 @@
     </div>
   </template>
 
+  <template id="kbItemTpl">
+    <div class="item">
+      <div class="thumb"></div>
+      <div class="meta">
+        <h3></h3>
+        <small class="meta-info"></small>
+        <p class="meta-observation"></p>
+        <div class="tags"></div>
+      </div>
+      <div class="actions">
+        <button class="btn" data-action="open">Abrir</button>
+        <button class="btn" data-action="edit">Editar</button>
+        <button class="btn danger" data-action="delete">Excluir</button>
+      </div>
+    </div>
+  </template>
+
   <script>
-    // Simple offline storage model
+    // Storage keys
     const STORAGE_KEY = 'passaron_items_v1'
+    const BASE_KEY = 'passaron_kb_v1'
+
     const q = id => document.getElementById(id)
     const fileInput = q('fileInput')
     const listEl = q('list')
@@ -159,72 +226,154 @@
     const clearBtn = q('clearBtn')
     const clearAllBtn = q('clearAllBtn')
 
-    let items = []
-    let editingId = null
+    // Base elements
+    const tabNotes = q('tab-notes')
+    const tabBase = q('tab-base')
+    const notesPanel = q('notesPanel')
+    const basePanel = q('basePanel')
+    const kbUpload = q('kbUpload')
+    const kbList = q('kbList')
+    const kbEmpty = q('kbEmpty')
+    const exportKbBtn = q('exportKbBtn')
+    const importKbFile = q('importKbFile')
+    const baseEditor = q('baseEditor')
+    const baseTitle = q('baseTitle')
+    const baseObservation = q('baseObservation')
+    const baseTags = q('baseTags')
+    const saveBaseBtn = q('saveBaseBtn')
+    const cancelBaseBtn = q('cancelBaseBtn')
 
+    let items = []
+    let kb = []
+    let editingId = null
+    let editingKbId = null
+    let activeTab = 'notes'
+
+    function uid(){return Math.random().toString(36).slice(2,9)}
+
+    // Load / Save
     function load(){
-      try{
-        items = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]')
-      }catch(e){ items = [] }
+      try{ items = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]') }catch(e){ items = [] }
+      try{ kb = JSON.parse(localStorage.getItem(BASE_KEY) || '[]') }catch(e){ kb = [] }
     }
     function save(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(items)) }
+    function saveKb(){ localStorage.setItem(BASE_KEY, JSON.stringify(kb)) }
 
+    // Tab handling
+    tabNotes.addEventListener('click', ()=> switchTab('notes'))
+    tabBase.addEventListener('click', ()=> switchTab('base'))
+
+    function switchTab(name){
+      activeTab = name
+      tabNotes.classList.toggle('active', name==='notes')
+      tabBase.classList.toggle('active', name==='base')
+      notesPanel.classList.toggle('hidden', name!=='notes')
+      basePanel.classList.toggle('hidden', name!=='base')
+      // show/hide editors
+      editor.classList.toggle('hidden', true)
+      baseEditor.classList.toggle('hidden', true)
+      render(qInput.value)
+    }
+
+    // Render notes (existing) and base
     function render(filter=''){
+      const normalized = (filter||'').trim().toLowerCase()
+
+      // Notes panel
       listEl.innerHTML = ''
-      const normalized = filter.trim().toLowerCase()
-      const filtered = items.filter(it => {
+      const noteFiltered = items.filter(it => {
         if(!normalized) return true
         const hay = ((it.title||'') + ' ' + (it.content||'') + ' ' + (it.tags||'') + ' ' + (it.filename||'')).toLowerCase()
         return hay.indexOf(normalized) !== -1
       })
-      if(filtered.length===0){ emptyEl.style.display = 'block' } else { emptyEl.style.display = 'none' }
+      if(noteFiltered.length===0){ emptyEl.style.display = 'block' } else { emptyEl.style.display = 'none' }
+      noteFiltered.sort((a,b)=> (b.updated||b.created)-(a.updated||a.created))
+      for(const it of noteFiltered){ listEl.appendChild(renderNoteItem(it)) }
 
-      filtered.sort((a,b)=> (b.updated||b.created)-(a.updated||a.created))
-
-      for(const it of filtered){
-        const tpl = document.getElementById('itemTpl').content.cloneNode(true)
-        const item = tpl.querySelector('.item')
-        const thumb = tpl.querySelector('.thumb')
-        const h3 = tpl.querySelector('h3')
-        const p = tpl.querySelector('p')
-        const tags = tpl.querySelector('.tags')
-        const viewBtn = tpl.querySelector('[data-action="view"]')
-        const editBtn = tpl.querySelector('[data-action="edit"]')
-        const delBtn = tpl.querySelector('[data-action="delete"]')
-
-        h3.textContent = it.title || (it.filename || 'Sem título')
-        p.textContent = (it.content || '').slice(0,140)
-        tags.innerHTML = ''
-        for(const t of (it.tags||'').split(',').map(s=>s.trim()).filter(Boolean)){
-          const sp = document.createElement('span'); sp.className='tag'; sp.textContent=t; tags.appendChild(sp)
-        }
-
-        if(it.type==='image'){
-          const img = document.createElement('img')
-          img.src = it.data
-          img.className='preview-img'
-          img.style.width='72px'
-          img.style.height='72px'
-          img.style.objectFit='cover'
-          thumb.appendChild(img)
-        }else{
-          thumb.textContent = it.title ? it.title.charAt(0).toUpperCase() : 'N'
-          thumb.style.display='flex'; thumb.style.alignItems='center'; thumb.style.justifyContent='center'; thumb.style.fontSize='1.2rem'; thumb.style.color='var(--muted)'
-        }
-
-        viewBtn.addEventListener('click',()=> viewItem(it.id))
-        editBtn.addEventListener('click',()=> editItem(it.id))
-        delBtn.addEventListener('click',()=> deleteItem(it.id))
-
-        listEl.appendChild(tpl)
-      }
+      // KB panel
+      kbList.innerHTML = ''
+      const kbFiltered = kb.filter(it=>{
+        if(!normalized) return true
+        const hay = ((it.name||'') + ' ' + (it.observation||'') + ' ' + (it.tags||'') + ' ' + (it.searchableText||'')).toLowerCase()
+        return hay.indexOf(normalized)!==-1
+      })
+      if(kbFiltered.length===0){ kbEmpty.style.display = 'block' } else { kbEmpty.style.display = 'none' }
+      kbFiltered.sort((a,b)=> (b.updated||b.created)-(a.updated||a.created))
+      for(const it of kbFiltered){ kbList.appendChild(renderKbItem(it)) }
     }
 
-    function uid(){return Math.random().toString(36).slice(2,9)}
+    function renderNoteItem(it){
+      const tpl = document.getElementById('itemTpl').content.cloneNode(true)
+      const thumb = tpl.querySelector('.thumb')
+      const h3 = tpl.querySelector('h3')
+      const p = tpl.querySelector('p')
+      const tags = tpl.querySelector('.tags')
+      const viewBtn = tpl.querySelector('[data-action="view"]')
+      const editBtn = tpl.querySelector('[data-action="edit"]')
+      const delBtn = tpl.querySelector('[data-action="delete"]')
 
+      h3.textContent = it.title || (it.filename || 'Sem título')
+      p.textContent = (it.content || '').slice(0,140)
+      tags.innerHTML = ''
+      for(const t of (it.tags||'').split(',').map(s=>s.trim()).filter(Boolean)){
+        const sp = document.createElement('span'); sp.className='tag'; sp.textContent=t; tags.appendChild(sp)
+      }
+      if(it.type==='image'){
+        const img = document.createElement('img'); img.src = it.data; img.className='preview-img'; img.style.width='72px'; img.style.height='72px'; img.style.objectFit='cover'; thumb.appendChild(img)
+      }else{
+        thumb.textContent = it.title ? it.title.charAt(0).toUpperCase() : 'N'
+        thumb.style.display='flex'; thumb.style.alignItems='center'; thumb.style.justifyContent='center'; thumb.style.fontSize='1.2rem'; thumb.style.color='var(--muted)'
+      }
+      viewBtn.addEventListener('click',()=> viewItem(it.id))
+      editBtn.addEventListener('click',()=> editItem(it.id))
+      delBtn.addEventListener('click',()=> deleteItem(it.id))
+      return tpl
+    }
+
+    function renderKbItem(it){
+      const tpl = document.getElementById('kbItemTpl').content.cloneNode(true)
+      const thumb = tpl.querySelector('.thumb')
+      const h3 = tpl.querySelector('h3')
+      const info = tpl.querySelector('.meta-info')
+      const obs = tpl.querySelector('.meta-observation')
+      const tags = tpl.querySelector('.tags')
+      const openBtn = tpl.querySelector('[data-action="open"]')
+      const editBtn = tpl.querySelector('[data-action="edit"]')
+      const delBtn = tpl.querySelector('[data-action="delete"]')
+
+      h3.textContent = it.name || 'Sem nome'
+      info.textContent = `${it.type || 'desconhecido'} · ${formatSize(it.size || 0)} · ${new Date(it.created).toLocaleString()}`
+      obs.textContent = it.observation || ''
+      tags.innerHTML = ''
+      for(const t of (it.tags||'').split(',').map(s=>s.trim()).filter(Boolean)){
+        const sp = document.createElement('span'); sp.className='tag'; sp.textContent=t; tags.appendChild(sp)
+      }
+
+      // thumbnail
+      if(it.type && it.type.startsWith('image') && it.data){
+        const img = document.createElement('img'); img.src = it.data; img.className='preview-img'; img.style.width='72px'; img.style.height='72px'; img.style.objectFit='cover'; thumb.appendChild(img)
+      }else{
+        thumb.textContent = (it.name||'F').charAt(0).toUpperCase(); thumb.style.display='flex'; thumb.style.alignItems='center'; thumb.style.justifyContent='center'; thumb.style.fontSize='1.2rem'; thumb.style.color='var(--muted)'
+      }
+
+      openBtn.addEventListener('click', ()=> openKbItem(it.id))
+      editBtn.addEventListener('click', ()=> editKbItem(it.id))
+      delBtn.addEventListener('click', ()=> deleteKbItem(it.id))
+
+      return tpl
+    }
+
+    function formatSize(n){
+      if(n<1024) return n+' B'
+      if(n<1024*1024) return (n/1024).toFixed(1)+' KB'
+      return (n/(1024*1024)).toFixed(1)+' MB'
+    }
+
+    // Note actions (existing)
     function showEditor(asImageData){
       splash.style.display='none'
       editor.classList.remove('hidden')
+      baseEditor.classList.add('hidden')
       if(asImageData){
         titleInput.value = asImageData.filename || ''
         contentInput.value = asImageData.caption || ''
@@ -239,105 +388,197 @@
         delete editor.dataset.pendingImage
       }
     }
-
-    function hideEditor(){
-      editor.classList.add('hidden')
-      splash.style.display='flex'
-      delete editor.dataset.pendingImage
-    }
-
-    function addImageFromFile(file,dataUrl){
-      const obj = { id: uid(), type:'image', filename: file.name, data: dataUrl, title: file.name, content:'', tags:'', created:Date.now() }
-      items.push(obj); save(); render(qInput.value)
-    }
-
-    fileInput.addEventListener('change', async (ev)=>{
-      const f = ev.target.files && ev.target.files[0]
-      if(!f) return
-      const reader = new FileReader()
-      reader.onload = () => {
-        // preview then open editor so user can add tags/caption
-        const data = reader.result
-        showEditor({data,filename:f.name,caption:'',tags:''})
-      }
-      reader.readAsDataURL(f)
-      fileInput.value=''
-    })
-
-    newNoteBtn.addEventListener('click',()=> showEditor())
-    cancelBtn.addEventListener('click',()=> hideEditor())
-
-    saveBtn.addEventListener('click',()=>{
-      const title = titleInput.value.trim()
-      const content = contentInput.value.trim()
-      const tags = tagsInput.value.trim()
-      if(editor.dataset.pendingImage){
-        // save image item
-        const obj = { id: editingId || uid(), type:'image', filename: title || ('img_'+Date.now()), data: editor.dataset.pendingImage, title: title || '', content, tags, created:Date.now(), updated:Date.now() }
-        // if editing replace
-        const idx = items.findIndex(it=>it.id===obj.id)
-        if(idx>=0) items[idx]=obj; else items.push(obj)
-      }else{
-        const obj = { id: editingId || uid(), type:'note', title, content, tags, created:Date.now(), updated:Date.now() }
-        const idx = items.findIndex(it=>it.id===obj.id)
-        if(idx>=0) items[idx]=obj; else items.push(obj)
-      }
-      save(); render(qInput.value); hideEditor()
-    })
+    function hideEditor(){ editor.classList.add('hidden'); splash.style.display='flex'; delete editor.dataset.pendingImage }
 
     function viewItem(id){
-      const it = items.find(x=>x.id===id)
-      if(!it) return
+      const it = items.find(x=>x.id===id); if(!it) return
       if(it.type==='image'){
-        // open preview in new window (data URL) in a simple template
         const w = window.open('about:blank','_blank')
         w.document.write('<title>'+escapeHtml(it.title||it.filename||'Imagem')+'</title>')
         w.document.write('<style>body{margin:0;display:flex;align-items:center;justify-content:center;height:100vh;background:#000}img{max-width:100%;max-height:100vh}</style>')
         w.document.write('<img src="'+it.data+'" alt="'+escapeHtml(it.title||it.filename||'imagem')+'">')
         w.document.close()
       }else{
-        // modal-like simple alert
         alert((it.title?it.title+'\n\n':'') + (it.content||'') + (it.tags?('\n\nTags: '+it.tags):''))
       }
     }
 
-    function editItem(id){
-      const it = items.find(x=>x.id===id)
-      if(!it) return
-      if(it.type==='image'){
-        showEditor({id:it.id,data:it.data,filename:it.filename,caption:it.content,tags:it.tags})
-      }else{
-        showEditor(); editingId=it.id; titleInput.value=it.title||''; contentInput.value=it.content||''; tagsInput.value=it.tags||''
+    function editItem(id){ const it = items.find(x=>x.id===id); if(!it) return; if(it.type==='image'){ showEditor({id:it.id,data:it.data,filename:it.filename,caption:it.content,tags:it.tags}) }else{ showEditor(); editingId=it.id; titleInput.value=it.title||''; contentInput.value=it.content||''; tagsInput.value=it.tags||'' } }
+    function deleteItem(id){ if(!confirm('Excluir este item?')) return; items = items.filter(x=>x.id!==id); save(); render(qInput.value) }
+
+    // KB actions
+    kbUpload.addEventListener('change', async (ev)=>{
+      const files = Array.from(ev.target.files || [])
+      if(files.length===0) return
+      for(const f of files){
+        await handleKbFile(f)
+      }
+      kbUpload.value=''
+      saveKb(); render(qInput.value)
+    })
+
+    async function handleKbFile(file){
+      const id = uid()
+      const entry = { id, name: file.name, type: file.type || mimeFromName(file.name), size: file.size, created: Date.now(), updated: Date.now(), tags:'', observation:'', searchableText: '' }
+
+      // For TXT and JSON: read text and include in searchableText so search can find content
+      if(file.type==='text/plain' || file.name.toLowerCase().endsWith('.txt')){
+        try{
+          const txt = await file.text(); entry.searchableText = txt; entry.text = txt
+        }catch(e){ /* ignore */ }
+      } else if(file.type==='application/json' || file.name.toLowerCase().endsWith('.json')){
+        try{
+          const txt = await file.text(); entry.searchableText = txt; entry.text = txt; entry.json = JSON.parse(txt)
+        }catch(e){ /* ignore invalid json */ }
+      } else if(file.type.startsWith('image/')){
+        try{
+          const data = await readFileAsDataURL(file); entry.data = data
+        }catch(e){}
+      } else {
+        // PDF/DOC/DOCX and other binary files: we can't parse them in the browser without libraries or backend.
+        // For the MVP we store metadata (name/type/size/date) and allow the user to add an observation and tags.
+        // Note in code: deep parsing of PDF/DOC requires a backend or heavy client libs (not included in this MVP).
+      }
+
+      kb.push(entry)
+    }
+
+    function mimeFromName(name){
+      const n = name.toLowerCase()
+      if(n.endsWith('.pdf')) return 'application/pdf'
+      if(n.endsWith('.doc')) return 'application/msword'
+      if(n.endsWith('.docx')) return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+      if(n.endsWith('.json')) return 'application/json'
+      if(n.endsWith('.txt')) return 'text/plain'
+      if(n.endsWith('.png')) return 'image/png'
+      if(n.endsWith('.jpg') || n.endsWith('.jpeg')) return 'image/jpeg'
+      if(n.endsWith('.webp')) return 'image/webp'
+      return ''
+    }
+
+    function readFileAsDataURL(file){
+      return new Promise((res,rej)=>{
+        const r = new FileReader(); r.onload = ()=>res(r.result); r.onerror = rej; r.readAsDataURL(file)
+      })
+    }
+
+    function openKbItem(id){
+      const it = kb.find(x=>x.id===id); if(!it) return
+      // if data present and image, open preview; if text present, open in new window; otherwise show info and allow download
+      if(it.data){
+        const w = window.open('about:blank','_blank')
+        w.document.write('<title>'+escapeHtml(it.name||'Arquivo')+'</title>')
+        w.document.write('<style>body{margin:0;display:flex;align-items:center;justify-content:center;height:100vh;background:#000}img{max-width:100%;max-height:100vh}</style>')
+        w.document.write('<img src="'+it.data+'" alt="'+escapeHtml(it.name||'imagem')+'">')
+        w.document.close()
+      } else if(it.text){
+        const w = window.open('about:blank','_blank')
+        w.document.write('<title>'+escapeHtml(it.name||'Texto')+'</title>')
+        w.document.write('<pre style="white-space:pre-wrap;font-family:inherit;padding:12px">'+escapeHtml(it.text)+'</pre>')
+        w.document.close()
+      } else {
+        // allow user to download the file by creating a blob and link if we have raw data stored; otherwise show metadata
+        alert(`${it.name}\nType: ${it.type}\nSize: ${formatSize(it.size||0)}\n\nObservação: ${it.observation||'-'}`)
       }
     }
 
-    function deleteItem(id){
-      if(!confirm('Excluir este item?')) return
-      items = items.filter(x=>x.id!==id)
-      save(); render(qInput.value)
+    function editKbItem(id){
+      const it = kb.find(x=>x.id===id); if(!it) return
+      baseEditor.classList.remove('hidden')
+      editor.classList.add('hidden')
+      baseTitle.value = it.name || ''
+      baseObservation.value = it.observation || ''
+      baseTags.value = it.tags || ''
+      editingKbId = id
     }
 
+    saveBaseBtn.addEventListener('click', ()=>{
+      const name = baseTitle.value.trim()
+      const obs = baseObservation.value.trim()
+      const tags = baseTags.value.trim()
+      if(!editingKbId){ alert('Nenhum material selecionado para salvar.'); return }
+      const idx = kb.findIndex(x=>x.id===editingKbId)
+      if(idx<0) return
+      kb[idx].name = name || kb[idx].name
+      kb[idx].observation = obs
+      kb[idx].tags = tags
+      kb[idx].updated = Date.now()
+      saveKb(); render(qInput.value); baseEditor.classList.add('hidden'); editingKbId = null
+    })
+    cancelBaseBtn.addEventListener('click', ()=>{ baseEditor.classList.add('hidden'); editingKbId = null })
+
+    function deleteKbItem(id){ if(!confirm('Excluir este material da base?')) return; kb = kb.filter(x=>x.id!==id); saveKb(); render(qInput.value) }
+
+    // Export / Import KB
+    exportKbBtn.addEventListener('click', ()=>{
+      const data = JSON.stringify(kb, null, 2)
+      const blob = new Blob([data], {type:'application/json'})
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a'); a.href = url; a.download = 'passaron_base.json'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url)
+    })
+
+    importKbFile.addEventListener('change', async (ev)=>{
+      const f = ev.target.files && ev.target.files[0]; if(!f) return
+      try{
+        const txt = await f.text(); const imported = JSON.parse(txt)
+        if(Array.isArray(imported)){
+          // simple merge: append with new ids if conflicts
+          for(const item of imported){ item.id = item.id || uid(); kb.push(item) }
+          saveKb(); render(qInput.value); alert('Importação concluída')
+        }else{
+          alert('Arquivo JSON inválido: esperado um array')
+        }
+      }catch(e){ alert('Erro ao importar: '+e.message) }
+      importKbFile.value=''
+    })
+
+    // File input for notes (images)
+    fileInput.addEventListener('change', async (ev)=>{
+      const f = ev.target.files && ev.target.files[0]; if(!f) return; const reader = new FileReader()
+      reader.onload = ()=>{ const data = reader.result; showEditor({data,filename:f.name,caption:'',tags:''}) }
+      reader.readAsDataURL(f); fileInput.value=''
+    })
+
+    // Save note
+    saveBtn.addEventListener('click', ()=>{
+      const title = titleInput.value.trim(); const content = contentInput.value.trim(); const tags = tagsInput.value.trim();
+      if(editor.dataset.pendingImage){
+        const obj = { id: editingId || uid(), type:'image', filename: title || ('img_'+Date.now()), data: editor.dataset.pendingImage, title: title || '', content, tags, created:Date.now(), updated:Date.now() }
+        const idx = items.findIndex(it=>it.id===obj.id); if(idx>=0) items[idx]=obj; else items.push(obj)
+      }else{
+        const obj = { id: editingId || uid(), type:'note', title, content, tags, created:Date.now(), updated:Date.now() }
+        const idx = items.findIndex(it=>it.id===obj.id); if(idx>=0) items[idx]=obj; else items.push(obj)
+      }
+      save(); render(qInput.value); hideEditor()
+    })
+
+    // KB search integrated: render function already checks kb.searchableText and observation/tags
+
+    // Misc
     qInput.addEventListener('input', ()=> render(qInput.value))
     clearBtn.addEventListener('click', ()=> { qInput.value=''; render('') })
-    clearAllBtn.addEventListener('click', ()=> { if(confirm('Apagar todos os dados locais?')){ items=[]; save(); render('') } })
+    clearAllBtn.addEventListener('click', ()=> { if(confirm('Apagar todos os dados locais?')){ items=[]; kb=[]; save(); saveKb(); render('') } })
 
-    function escapeHtml(s){ return (s||'').replace(/[&<>"']/g, c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;' }[c])) }
+    function escapeHtml(s){ return (s||'').replace(/[&<>"']/g, c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c])) }
 
     // initial load
     load(); render();
 
-    // expose a small API to import/export
+    // expose APIs
     window.Passaron = {
-      export: ()=> JSON.stringify(items),
-      import: (json)=> { try{ items = JSON.parse(json); save(); render(); return true }catch(e){return false} }
+      exportNotes: ()=> JSON.stringify(items),
+      importNotes: (json)=> { try{ items = JSON.parse(json); save(); render(); return true }catch(e){return false} },
+      exportKb: ()=> JSON.stringify(kb),
+      importKb: (json)=> { try{ kb = JSON.parse(json); saveKb(); render(); return true }catch(e){return false} }
     }
 
     // Keyboard: Ctrl+K to focus search
-    window.addEventListener('keydown', (e)=>{
-      if((e.ctrlKey || e.metaKey) && e.key.toLowerCase()==='k'){ e.preventDefault(); qInput.focus(); }
-    })
+    window.addEventListener('keydown', (e)=>{ if((e.ctrlKey || e.metaKey) && e.key.toLowerCase()==='k'){ e.preventDefault(); qInput.focus(); } })
 
-    // Service worker hint (not registered here) — site is static ready for Pages
+    // Notes about limitations (in-code):
+    // - PDF/DOC/DOCX: browsers cannot reliably parse these into text without external libraries or a backend service. In this MVP we store metadata and allow user annotations (observation/tags).
+    // - TXT and JSON files are read and incorporated into searchableText so their contents participate in local search.
+
   </script>
 </body>
 </html>
