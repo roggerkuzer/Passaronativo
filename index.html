@@ -4,42 +4,340 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Passaronativo — MVP</title>
-  <meta name="description" content="MVP estático — substitua este conteúdo pelo seu index.html real." />
+  <meta name="description" content="Passaronativo — MVP offline: notas, busca local e upload/preview de foto. Pronto para GitHub Pages." />
   <style>
-    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;line-height:1.6;max-width:900px;margin:4rem auto;padding:0 1rem;color:#222}
-    header{border-bottom:1px solid #eee;padding-bottom:1rem;margin-bottom:1rem}
-    pre{background:#f6f8fa;padding:1rem;border-radius:6px;overflow:auto}
-    a{color:#0366d6}
+    :root{
+      --bg:#0b0f13; --panel:#0f1418; --muted:#9aa6b2; --accent:#7bd389; --danger:#ff6b6b; --glass:rgba(255,255,255,0.03);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0;font-family:Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;color:#e6eef6;background:linear-gradient(180deg,var(--bg),#071017);padding:1rem}
+    .app{max-width:980px;margin:0 auto;background:linear-gradient(180deg, rgba(255,255,255,0.02), transparent);border-radius:12px;padding:16px;box-shadow:0 6px 24px rgba(0,0,0,0.6)}
+    header{display:flex;gap:12px;align-items:center}
+    .logo{width:44px;height:44px;border-radius:10px;background:linear-gradient(135deg,#072226 0%,#063a2e 100%);display:flex;align-items:center;justify-content:center;color:var(--accent);font-weight:700}
+    h1{font-size:1.1rem;margin:0}
+    p.lead{margin:0;color:var(--muted);font-size:0.9rem}
+
+    .controls{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+    .searchbox{flex:1;min-width:160px;display:flex;align-items:center;background:var(--panel);padding:8px;border-radius:10px}
+    .searchbox input{flex:1;background:transparent;border:0;outline:0;color:inherit;font-size:1rem;padding:6px}
+    .btn{background:var(--glass);color:var(--muted);border:1px solid rgba(255,255,255,0.03);padding:8px 10px;border-radius:10px;display:inline-flex;gap:8px;align-items:center;cursor:pointer}
+    .btn.primary{background:linear-gradient(90deg,var(--accent),#5ed39d);color:#052119;border:0}
+    .grid{display:grid;grid-template-columns:1fr;gap:12px;margin-top:14px}
+
+    @media(min-width:880px){.grid{grid-template-columns:360px 1fr}}
+
+    .panel{background:var(--panel);padding:12px;border-radius:10px;min-height:120px}
+    .small{font-size:0.85rem;color:var(--muted)}
+
+    label{display:block;margin-bottom:6px;font-size:0.9rem}
+    input[type=text], textarea{width:100%;padding:10px;border-radius:8px;border:0;background:rgba(255,255,255,0.02);color:inherit}
+    textarea{min-height:90px;resize:vertical}
+
+    .list{display:flex;flex-direction:column;gap:10px;margin-top:8px}
+    .item{background:linear-gradient(180deg, rgba(255,255,255,0.01), transparent);padding:10px;border-radius:8px;display:flex;gap:10px;align-items:flex-start}
+    .thumb{width:72px;height:72px;background:#081014;border-radius:8px;flex-shrink:0;display:flex;align-items:center;justify-content:center;overflow:hidden}
+    .meta{flex:1}
+    .meta h3{margin:0;font-size:0.95rem}
+    .meta p{margin:6px 0 0;color:var(--muted);font-size:0.9rem}
+    .item .actions{display:flex;flex-direction:column;gap:6px}
+    .icon{width:18px;height:18px;display:inline-block}
+    .muted{color:var(--muted)}
+    .tag{display:inline-block;background:rgba(255,255,255,0.03);padding:4px 8px;border-radius:999px;font-size:0.8rem;margin-right:6px}
+
+    footer{margin-top:12px;color:var(--muted);font-size:0.85rem;text-align:center}
+    .splash{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 10px;border-radius:8px;background:linear-gradient(180deg, rgba(123,211,137,0.03), transparent);text-align:center}
+
+    .hidden{display:none}
+    .danger{color:var(--danger)}
+
+    /* file input tiny styling */
+    .file-input{display:flex;gap:8px;align-items:center}
+    .preview-img{max-width:100%;height:auto;border-radius:6px;border:1px solid rgba(255,255,255,0.04)}
+    .row{display:flex;gap:8px;flex-wrap:wrap}
   </style>
 </head>
 <body>
-  <header>
-    <h1>Passaronativo — MVP</h1>
-    <p>Este é um índice placeholder criado automaticamente para publicar via GitHub Pages. Substitua por seu HTML original (botanico-campo-serra-mvp.html) se desejar.</p>
-  </header>
+  <div class="app" role="application" aria-label="Passaronativo MVP">
+    <header>
+      <div class="logo">P</div>
+      <div>
+        <h1>Passaronativo — MVP</h1>
+        <p class="lead">Notas locais, busca e upload de fotos — funciona offline (localStorage)</p>
+      </div>
+    </header>
 
-  <main>
-    <section>
-      <h2>Próximos passos</h2>
-      <ol>
-        <li>Se você quiser substituir este arquivo pelo seu HTML original, cole o conteúdo aqui e eu atualizo o repositório.</li>
-        <li>Se ainda não empurrou do seu ambiente local, verifique suas credenciais (use um PAT para HTTPS ou configure SSH).</li>
-        <li>Ative o GitHub Pages nas configurações do repositório: Settings → Pages → Branch = <strong>main</strong>, Path = <strong>/ (root)</strong>.</li>
-      </ol>
-    </section>
+    <div class="controls">
+      <div class="searchbox" role="search">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="margin-right:8px"><path d="M21 21l-4.35-4.35" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path><circle cx="11" cy="11" r="6" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></circle></svg>
+        <input id="q" type="text" placeholder="Buscar notas, imagens ou tags..." aria-label="Buscar" />
+        <button class="btn" id="clearBtn" title="Limpar">Limpar</button>
+      </div>
 
-    <section>
-      <h2>Links úteis</h2>
-      <ul>
-        <li><a href="https://github.com/roggerkuzer/Passaronativo">Repositório no GitHub</a></li>
-        <li><a href="https://raw.githubusercontent.com/roggerkuzer/Passaronativo/main/index.html">Versão raw deste index.html</a> (pode demorar alguns segundos para ficar disponível)</li>
-      </ul>
-    </section>
+      <button class="btn" id="newNoteBtn" title="Nova nota">Nova nota</button>
+      <label class="btn" for="fileInput" style="cursor:pointer">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 15v4a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h11" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path><path d="M16 3h5v5" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+        <span>Upload</span>
+      </label>
+      <input id="fileInput" type="file" accept="image/*" class="hidden" />
 
-    <section>
-      <h2>Observação</h2>
-      <p>O repositório já é público. Eu criei este arquivo <code>index.html</code> diretamente no branch padrão. Se quiser que eu use seu HTML original, cole o conteúdo aqui e eu substituo.</p>
-    </section>
-  </main>
+      <button class="btn" id="clearAllBtn" title="Limpar tudo">Limpar tudo</button>
+    </div>
+
+    <div class="grid">
+      <aside class="panel">
+        <div id="splash" class="splash">
+          <h2 style="margin:0">Bem-vindo</h2>
+          <p class="small">Crie notas, faça upload de fotos e use a busca local. Tudo salvo no seu navegador.</p>
+        </div>
+
+        <div id="editor" class="hidden">
+          <label for="title">Título</label>
+          <input id="title" type="text" placeholder="Título da nota ou imagem" />
+          <label for="content">Conteúdo / Legenda</label>
+          <textarea id="content" placeholder="Escreva aqui..."></textarea>
+          <label for="tags">Tags (separadas por vírgula)</label>
+          <input id="tags" type="text" placeholder="ex: campo,serra,botanico" />
+          <div style="display:flex;gap:8px;margin-top:8px">
+            <button class="btn primary" id="saveBtn">Salvar</button>
+            <button class="btn" id="cancelBtn">Cancelar</button>
+          </div>
+        </div>
+      </aside>
+
+      <main>
+        <div class="panel">
+          <div class="row" style="align-items:center;justify-content:space-between">
+            <div class="small">Itens salvos</div>
+            <div class="small muted">Offline · localStorage</div>
+          </div>
+
+          <div id="list" class="list" aria-live="polite"></div>
+
+          <div id="empty" class="small muted" style="margin-top:12px">Nenhuma nota ou imagem encontrada. Use "Nova nota" ou "Upload".</div>
+        </div>
+
+        <footer>
+          <small>Passaronativo — MVP • Dados armazenados apenas no seu navegador</small>
+        </footer>
+      </main>
+    </div>
+  </div>
+
+  <template id="itemTpl">
+    <div class="item">
+      <div class="thumb"></div>
+      <div class="meta">
+        <h3></h3>
+        <p></p>
+        <div class="tags"></div>
+      </div>
+      <div class="actions">
+        <button class="btn" data-action="view">Ver</button>
+        <button class="btn" data-action="edit">Editar</button>
+        <button class="btn danger" data-action="delete">Excluir</button>
+      </div>
+    </div>
+  </template>
+
+  <script>
+    // Simple offline storage model
+    const STORAGE_KEY = 'passaron_items_v1'
+    const q = id => document.getElementById(id)
+    const fileInput = q('fileInput')
+    const listEl = q('list')
+    const emptyEl = q('empty')
+    const splash = q('splash')
+    const editor = q('editor')
+    const newNoteBtn = q('newNoteBtn')
+    const saveBtn = q('saveBtn')
+    const cancelBtn = q('cancelBtn')
+    const titleInput = q('title')
+    const contentInput = q('content')
+    const tagsInput = q('tags')
+    const qInput = q('q')
+    const clearBtn = q('clearBtn')
+    const clearAllBtn = q('clearAllBtn')
+
+    let items = []
+    let editingId = null
+
+    function load(){
+      try{
+        items = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]')
+      }catch(e){ items = [] }
+    }
+    function save(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(items)) }
+
+    function render(filter=''){
+      listEl.innerHTML = ''
+      const normalized = filter.trim().toLowerCase()
+      const filtered = items.filter(it => {
+        if(!normalized) return true
+        const hay = ((it.title||'') + ' ' + (it.content||'') + ' ' + (it.tags||'') + ' ' + (it.filename||'')).toLowerCase()
+        return hay.indexOf(normalized) !== -1
+      })
+      if(filtered.length===0){ emptyEl.style.display = 'block' } else { emptyEl.style.display = 'none' }
+
+      filtered.sort((a,b)=> (b.updated||b.created)-(a.updated||a.created))
+
+      for(const it of filtered){
+        const tpl = document.getElementById('itemTpl').content.cloneNode(true)
+        const item = tpl.querySelector('.item')
+        const thumb = tpl.querySelector('.thumb')
+        const h3 = tpl.querySelector('h3')
+        const p = tpl.querySelector('p')
+        const tags = tpl.querySelector('.tags')
+        const viewBtn = tpl.querySelector('[data-action="view"]')
+        const editBtn = tpl.querySelector('[data-action="edit"]')
+        const delBtn = tpl.querySelector('[data-action="delete"]')
+
+        h3.textContent = it.title || (it.filename || 'Sem título')
+        p.textContent = (it.content || '').slice(0,140)
+        tags.innerHTML = ''
+        for(const t of (it.tags||'').split(',').map(s=>s.trim()).filter(Boolean)){
+          const sp = document.createElement('span'); sp.className='tag'; sp.textContent=t; tags.appendChild(sp)
+        }
+
+        if(it.type==='image'){
+          const img = document.createElement('img')
+          img.src = it.data
+          img.className='preview-img'
+          img.style.width='72px'
+          img.style.height='72px'
+          img.style.objectFit='cover'
+          thumb.appendChild(img)
+        }else{
+          thumb.textContent = it.title ? it.title.charAt(0).toUpperCase() : 'N'
+          thumb.style.display='flex'; thumb.style.alignItems='center'; thumb.style.justifyContent='center'; thumb.style.fontSize='1.2rem'; thumb.style.color='var(--muted)'
+        }
+
+        viewBtn.addEventListener('click',()=> viewItem(it.id))
+        editBtn.addEventListener('click',()=> editItem(it.id))
+        delBtn.addEventListener('click',()=> deleteItem(it.id))
+
+        listEl.appendChild(tpl)
+      }
+    }
+
+    function uid(){return Math.random().toString(36).slice(2,9)}
+
+    function showEditor(asImageData){
+      splash.style.display='none'
+      editor.classList.remove('hidden')
+      if(asImageData){
+        titleInput.value = asImageData.filename || ''
+        contentInput.value = asImageData.caption || ''
+        tagsInput.value = asImageData.tags || ''
+        editingId = asImageData.id || null
+        editor.dataset.pendingImage = asImageData.data
+      }else{
+        titleInput.value=''
+        contentInput.value=''
+        tagsInput.value=''
+        editingId = null
+        delete editor.dataset.pendingImage
+      }
+    }
+
+    function hideEditor(){
+      editor.classList.add('hidden')
+      splash.style.display='flex'
+      delete editor.dataset.pendingImage
+    }
+
+    function addImageFromFile(file,dataUrl){
+      const obj = { id: uid(), type:'image', filename: file.name, data: dataUrl, title: file.name, content:'', tags:'', created:Date.now() }
+      items.push(obj); save(); render(qInput.value)
+    }
+
+    fileInput.addEventListener('change', async (ev)=>{
+      const f = ev.target.files && ev.target.files[0]
+      if(!f) return
+      const reader = new FileReader()
+      reader.onload = () => {
+        // preview then open editor so user can add tags/caption
+        const data = reader.result
+        showEditor({data,filename:f.name,caption:'',tags:''})
+      }
+      reader.readAsDataURL(f)
+      fileInput.value=''
+    })
+
+    newNoteBtn.addEventListener('click',()=> showEditor())
+    cancelBtn.addEventListener('click',()=> hideEditor())
+
+    saveBtn.addEventListener('click',()=>{
+      const title = titleInput.value.trim()
+      const content = contentInput.value.trim()
+      const tags = tagsInput.value.trim()
+      if(editor.dataset.pendingImage){
+        // save image item
+        const obj = { id: editingId || uid(), type:'image', filename: title || ('img_'+Date.now()), data: editor.dataset.pendingImage, title: title || '', content, tags, created:Date.now(), updated:Date.now() }
+        // if editing replace
+        const idx = items.findIndex(it=>it.id===obj.id)
+        if(idx>=0) items[idx]=obj; else items.push(obj)
+      }else{
+        const obj = { id: editingId || uid(), type:'note', title, content, tags, created:Date.now(), updated:Date.now() }
+        const idx = items.findIndex(it=>it.id===obj.id)
+        if(idx>=0) items[idx]=obj; else items.push(obj)
+      }
+      save(); render(qInput.value); hideEditor()
+    })
+
+    function viewItem(id){
+      const it = items.find(x=>x.id===id)
+      if(!it) return
+      if(it.type==='image'){
+        // open preview in new window (data URL) in a simple template
+        const w = window.open('about:blank','_blank')
+        w.document.write('<title>'+escapeHtml(it.title||it.filename||'Imagem')+'</title>')
+        w.document.write('<style>body{margin:0;display:flex;align-items:center;justify-content:center;height:100vh;background:#000}img{max-width:100%;max-height:100vh}</style>')
+        w.document.write('<img src="'+it.data+'" alt="'+escapeHtml(it.title||it.filename||'imagem')+'">')
+        w.document.close()
+      }else{
+        // modal-like simple alert
+        alert((it.title?it.title+'\n\n':'') + (it.content||'') + (it.tags?('\n\nTags: '+it.tags):''))
+      }
+    }
+
+    function editItem(id){
+      const it = items.find(x=>x.id===id)
+      if(!it) return
+      if(it.type==='image'){
+        showEditor({id:it.id,data:it.data,filename:it.filename,caption:it.content,tags:it.tags})
+      }else{
+        showEditor(); editingId=it.id; titleInput.value=it.title||''; contentInput.value=it.content||''; tagsInput.value=it.tags||''
+      }
+    }
+
+    function deleteItem(id){
+      if(!confirm('Excluir este item?')) return
+      items = items.filter(x=>x.id!==id)
+      save(); render(qInput.value)
+    }
+
+    qInput.addEventListener('input', ()=> render(qInput.value))
+    clearBtn.addEventListener('click', ()=> { qInput.value=''; render('') })
+    clearAllBtn.addEventListener('click', ()=> { if(confirm('Apagar todos os dados locais?')){ items=[]; save(); render('') } })
+
+    function escapeHtml(s){ return (s||'').replace(/[&<>"']/g, c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;' }[c])) }
+
+    // initial load
+    load(); render();
+
+    // expose a small API to import/export
+    window.Passaron = {
+      export: ()=> JSON.stringify(items),
+      import: (json)=> { try{ items = JSON.parse(json); save(); render(); return true }catch(e){return false} }
+    }
+
+    // Keyboard: Ctrl+K to focus search
+    window.addEventListener('keydown', (e)=>{
+      if((e.ctrlKey || e.metaKey) && e.key.toLowerCase()==='k'){ e.preventDefault(); qInput.focus(); }
+    })
+
+    // Service worker hint (not registered here) — site is static ready for Pages
+  </script>
 </body>
 </html>
